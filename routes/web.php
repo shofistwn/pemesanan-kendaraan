@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,7 +16,21 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::prefix('admin')->name('admin')->group(function () {
+Route::controller(AuthController::class)->group(function () {
+  Route::get('/', 'loginForm')->name('login')->middleware('guest');
+  Route::post('/login', 'login')->name('login.submit');
+  Route::get('/logout', 'logout')->name('logout');
+});
+
+Route::get('/dashboard', function () {
+  $userRole = auth()->user()->role;
+
+  if ($userRole === 'admin') {
+    return redirect()->route('admin.index');
+  }
+})->middleware('auth');
+
+Route::middleware('role:admin')->prefix('admin')->name('admin')->group(function () {
   Route::get('/', [AdminController::class, 'index'])->name('.index');
 
   Route::prefix('bookings')->name('.bookings')->controller(BookingController::class)->group(function () {
@@ -24,8 +39,4 @@ Route::prefix('admin')->name('admin')->group(function () {
     Route::get('/show', 'show')->name('.show');
     Route::get('/edit', 'edit')->name('.edit');
   });
-});
-
-Route::get('/', function () {
-  return view('pages.auth.login');
 });
