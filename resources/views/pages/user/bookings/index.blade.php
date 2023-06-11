@@ -29,15 +29,14 @@
         <div class="d-flex justify-content-between align-items-center">
             <h1>Bookings</h1>
             <div>
-                <a href="{{ route('admin.bookings.create') }}" class="btn btn-primary me-2">Add Booking</a>
-                <a href="{{ route('admin.bookings.export', ['start_date' => request('start_date'), 'end_date' => request('end_date'), 'type' => request('type')]) }}"
+                <a href="{{ route('user.bookings.export', ['start_date' => request('start_date'), 'end_date' => request('end_date'), 'type' => request('type')]) }}"
                     class="btn btn-success">Export Excel</a>
             </div>
         </div>
 
         <div class="card mt-3">
             <div class="card-body">
-                <form method="GET" action="{{ route('admin.bookings.search') }}">
+                <form method="GET" action="{{ route('user.bookings.search') }}">
                     <div class="row">
                         <div class="form-group col-md-4 mb-3">
                             <label for="startDate">Start date:</label>
@@ -107,13 +106,25 @@
                                     </th>
                                     <td>{{ $booking->booking_date }}</td>
                                     <td>
-                                        <a href="{{ route('admin.bookings.show', $booking->id) }}"
+                                        <a href="{{ route('user.bookings.show', $booking->id) }}"
                                             class="badge bg-primary text-decoration-none text-white">Detail</a>
-                                        <a href="{{ route('admin.bookings.edit', $booking->id) }}"
-                                            class="badge bg-success text-decoration-none text-white">Edit</a>
-                                        <a href="{{ route('admin.bookings.delete', $booking->id) }}"
-                                            class="badge bg-danger text-decoration-none text-white"
-                                            onclick="return confirm('Are you sure you want to delete the data?')">Delete</a>
+
+                                        @php
+                                            $user_role = auth()->user()->role;
+                                        @endphp
+                                        @if ($booking->approval->get(0)->approval_status == 'pending' && $user_role === 'regional_manager')
+                                            <a href="{{ route('user.bookings.edit', $booking->id) }}"
+                                                class="badge bg-success text-decoration-none text-white">Update Status</a>
+                                        @elseif (
+                                            $booking->approval->get(0)->approval_status == 'approved' &&
+                                                $booking->approval->get(1)->approval_status == 'pending' &&
+                                                $user_role === 'branch_manager')
+                                            <a href="{{ route('user.bookings.edit', $booking->id) }}"
+                                                class="badge bg-success text-decoration-none text-white">Update Status</a>
+                                        @elseif ($booking->approval->get(0)->approval_status == 'pending' && $user_role === 'branch_manager')
+                                            <span class="badge bg-warning text-decoration-none text-dark disabled">Pending
+                                                Approver 1</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty

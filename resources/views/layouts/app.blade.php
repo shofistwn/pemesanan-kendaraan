@@ -11,7 +11,11 @@
 </head>
 
 <body>
-    <x-Navbar />
+    @if (auth()->user()->role === 'admin')
+        <x-AdminNavbar />
+    @else
+        <x-Navbar />
+    @endif
 
     <div class="py-4">
         @yield('content')

@@ -28,7 +28,7 @@
         <div class="card mt-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="card-title mb-0">Bookings</h4>
-                <a href="{{ route('admin.bookings.index') }}" class="btn btn-primary">See All</a>
+                <a href="{{ route('user.bookings.index') }}" class="btn btn-primary">See All</a>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">

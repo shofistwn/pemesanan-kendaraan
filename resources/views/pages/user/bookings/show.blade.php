@@ -61,8 +61,8 @@
                             </div>
 
                             <div class="text-center">
-                                <a href="{{ route('admin.bookings.index') }}" class="btn btn-secondary me-2">Back</a>
-                                <a href="{{ route('admin.bookings.edit', $booking->id) }}" class="btn btn-primary">Edit</a>
+                                <a href="{{ route('user.bookings.index') }}" class="btn btn-secondary me-2">Back</a>
+                                <a href="{{ route('user.bookings.edit', $booking->id) }}" class="btn btn-primary">Edit</a>
                             </div>
 
                         </form>

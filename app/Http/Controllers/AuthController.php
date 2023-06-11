@@ -21,13 +21,8 @@ class AuthController extends Controller
 
       if ($user->role === 'admin') {
         return redirect()->route('admin.index');
-      } elseif ($user->role === 'regional_manager') {
-        return response()->json('regional');
-        // return redirect()->route('regional.dashboard');
-      } elseif ($user->role === 'branch_manager') {
-        return response()->json('branch');
-        // return redirect()->route('branch.dashboard');
       }
+      return redirect()->route('user.index');
     }
     return back()->with('error', 'Email or password are incorrect!');
   }

@@ -8,10 +8,10 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mx-auto gx-5">
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('user.index') }}">Dashboard</a>
+                    <a class="nav-link" href="{{ route('admin.index') }}">Dashboard</a>
                 </li>
                 <li class="nav-item mx-lg-5">
-                    <a class="nav-link" href="{{ route('user.bookings.index') }}">Bookings</a>
+                    <a class="nav-link" href="{{ route('admin.bookings.index') }}">Bookings</a>
                 </li>
             </ul>
             <ul class="navbar-nav">
