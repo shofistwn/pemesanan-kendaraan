@@ -5,16 +5,23 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use Carbon\Carbon;
 
-class AdminController extends Controller
+class ManagerController extends Controller
 {
+
   public function index()
   {
     $bookings = Booking::with('user:id,name', 'vehicle', 'driver', 'approval.user:id,name,role')
+      ->whereHas('approval', function ($query) {
+        $query->where('user_id', auth()->user()->id);
+      })
       ->orderByDesc('id')
       ->limit(5)
       ->get();
 
-    $dataBookings = Booking::with('vehicle')
+    $dataBookings = Booking::with('vehicle', 'approval')
+      ->whereHas('approval', function ($query) {
+        $query->where('user_id', auth()->user()->id);
+      })
       ->orderByDesc('id')
       ->get();
 
@@ -107,6 +114,6 @@ class AdminController extends Controller
       $i++;
     }
 
-    return view('pages.admin.index', compact('bookings', 'chartData'));
+    return view('pages.user.index', compact('bookings', 'chartData'));
   }
 }
