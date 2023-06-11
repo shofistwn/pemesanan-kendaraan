@@ -17,6 +17,7 @@ class BookingController extends Controller
   public function index()
   {
     $bookings = Booking::with('user:id,name', 'vehicle', 'driver', 'approval.user:id,name,role')
+      ->orderByDesc('id')
       ->get();
 
     return view('pages.admin.bookings.index', compact('bookings'));
@@ -128,7 +129,7 @@ class BookingController extends Controller
 
   public function show(int $booking_id)
   {
-    $booking = Booking::find($booking_id)
+    $booking = Booking::where('id', $booking_id)
       ->with('user:id,name', 'vehicle', 'driver', 'approval.user:id,name,role')
       ->first();
 
@@ -137,7 +138,7 @@ class BookingController extends Controller
 
   public function edit(int $booking_id)
   {
-    $booking = Booking::find($booking_id)
+    $booking = Booking::where('id', $booking_id)
       ->with('user:id,name', 'vehicle', 'driver', 'approval.user:id,name,role')
       ->first();
 
@@ -175,10 +176,10 @@ class BookingController extends Controller
     $booking = Booking::find($booking_id);
 
     $validator = Validator::make($request->all(), [
-      'driver_id' => 'integer',
-      'vehicle_id' => 'integer',
-      'first_approver_id' => 'integer',
-      'second_approver_id' => 'integer',
+      'driver_id' => 'integer|required',
+      'vehicle_id' => 'integer|required',
+      'first_approver_id' => 'integer|required',
+      'second_approver_id' => 'integer|required',
     ]);
 
     $requestData = $validator->validated();
@@ -186,17 +187,18 @@ class BookingController extends Controller
     try {
       DB::beginTransaction();
 
-      Approval::where('booking_id', $booking->id)
-        ->where('user_id', $booking->approval->get(0)->user_id)
-        ->first()
-        ->update(['user_id', $requestData['first_approver_id']]);
+      $booking->update([
+        'vehicle_id' => $requestData['vehicle_id'],
+        'driver_id' => $requestData['driver_id'],
+      ]);
 
-      Approval::where('booking_id', $booking->id)
-        ->where('user_id', $booking->approval->get(1)->user_id)
-        ->first()
-        ->update(['user_id', $requestData['second_approver_id']]);
+      $booking->approval->firstWhere('approval_level', '1')->update([
+        'user_id' => $requestData['first_approver_id'],
+      ]);
 
-      $booking->update($requestData);
+      $booking->approval->firstWhere('approval_level', '2')->update([
+        'user_id' => $requestData['second_approver_id'],
+      ]);
 
       DB::commit();
 
@@ -206,6 +208,7 @@ class BookingController extends Controller
       return back()->with('error', $e->getMessage());
     }
   }
+
 
   public function delete(int $booking_id)
   {

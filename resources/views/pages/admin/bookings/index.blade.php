@@ -84,7 +84,7 @@
                             @forelse ($bookings as $index => $booking)
                                 <tr>
                                     <td>{{ ++$index }}</td>
-                                    <td>{{ $booking->user->name }}</td>
+                                    <td>{{ $booking->driver->driver_name }}</td>
                                     <td>{{ $booking->vehicle->vehicle_type }}</td>
                                     <td>{{ $booking->vehicle->vehicle_number }}</td>
                                     <td>{{ $booking->approval->get(0)->user->name ?? '-' }}</td>

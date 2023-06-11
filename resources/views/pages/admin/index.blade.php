@@ -15,54 +15,12 @@
                     <div class="col-md-8 col-lg-9 h4 card-title m-0">
                         Vehicle Type
                     </div>
-                    <div class="col mt-3 mt-lg-0">
-                        <select class="form-select form-select-sm select-type">
-                            <option value="1" selected>All</option>
-                            <option value="2">Passenger Vehicles</option>
-                            <option value="3">Cargo Vehicles</option>
-                        </select>
-                    </div>
                 </div>
             </div>
 
             <div class="card-body">
                 <div class="chart-area">
-                    <canvas id="typeChart1"></canvas>
-                </div>
-                <div class="chart-area">
-                    <canvas id="typeChart2"></canvas>
-                </div>
-                <div class="chart-area">
-                    <canvas id="typeChart3"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="card mt-4">
-            <div class="card-header">
-                <div class="row justify-content-between align-items-center">
-                    <div class="col-md-8 col-lg-9 h4 card-title m-0">
-                      Booking Status
-                    </div>
-                    <div class="col mt-3 mt-lg-0">
-                        <select class="form-select form-select-sm select-status">
-                            <option value="1" selected>All</option>
-                            <option value="2">Approved</option>
-                            <option value="3">Rejected</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-body pt-4">
-                <div class="chart-area">
-                    <canvas id="statusChart1"></canvas>
-                </div>
-                <div class="chart-area">
-                    <canvas id="statusChart2"></canvas>
-                </div>
-                <div class="chart-area">
-                    <canvas id="statusChart3"></canvas>
+                    <canvas id="typeChart"></canvas>
                 </div>
             </div>
         </div>
@@ -85,21 +43,50 @@
                                 <th>Second Approver</th>
                                 <th>Status</th>
                                 <th>Date</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>Jonathan</td>
-                                <td>Angkutan Orang</td>
-                                <td>AG 8689 YG</td>
-                                <td>Level 1</td>
-                                <td>Level 2</td>
-                                <th>
-                                    <span class="badge bg-primary">Pending Approver 2</span>
-                                </th>
-                                <td>20 Jun, 2022</td>
-                            </tr>
+                            @forelse ($bookings as $index => $booking)
+                                <tr>
+                                    <td>{{ ++$index }}</td>
+                                    <td>{{ $booking->driver->driver_name }}</td>
+                                    <td>{{ $booking->vehicle->vehicle_type }}</td>
+                                    <td>{{ $booking->vehicle->vehicle_number }}</td>
+                                    <td>{{ $booking->approval->get(0)->user->name ?? '-' }}</td>
+                                    <td>{{ $booking->approval->get(1)->user->name ?? '-' }}</td>
+                                    <th>
+                                        @if ($booking->approval->isEmpty())
+                                            -
+                                        @elseif (
+                                            $booking->approval->get(0)->approval_status == 'rejected' ||
+                                                $booking->approval->get(1)->approval_status == 'rejected')
+                                            <span class="badge bg-danger">Rejected</span>
+                                        @elseif ($booking->approval->get(0)->approval_status == 'pending')
+                                            <span class="badge bg-warning text-dark">Pending Approver 1</span>
+                                        @elseif ($booking->approval->get(1)->approval_status == 'approved')
+                                            <span class="badge bg-success">Approved</span>
+                                        @elseif ($booking->approval->get(0)->approval_status == 'approved')
+                                            <span class="badge bg-warning text-dark">Pending Approver 2</span>
+                                        @endif
+                                    </th>
+                                    <td>{{ $booking->booking_date }}</td>
+                                    <td>
+                                        <a href="{{ route('admin.bookings.show', $booking->id) }}"
+                                            class="badge bg-primary text-decoration-none text-white">Detail</a>
+                                        <a href="{{ route('admin.bookings.edit', $booking->id) }}"
+                                            class="badge bg-success text-decoration-none text-white">Edit</a>
+                                        <a href="{{ route('admin.bookings.delete', $booking->id) }}"
+                                            class="badge bg-danger text-decoration-none text-white"
+                                            onclick="return confirm('Are you sure you want to delete the data?')">Delete</a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="text-center">Data not found!</td>
+                                </tr>
+                            @endforelse
+
                         </tbody>
                     </table>
                 </div>
@@ -108,61 +95,102 @@
     </div>
 
     <script src="{{ asset('assets/js/chart.min.js') }}"></script>
-    <script src="{{ asset('assets/js/type-chart.js') }}"></script>
-    <script src="{{ asset('assets/js/status-chart.js') }}"></script>
 
     <script>
-        var dropdown1 = document.querySelector(".select-type");
-        var typeChart1 = document.getElementById("typeChart1");
-        var typeChart2 = document.getElementById("typeChart2");
-        var typeChart3 = document.getElementById("typeChart3");
-
-        typeChart1.style.display = "block";
-        typeChart2.style.display = "none";
-        typeChart3.style.display = "none";
-
-        dropdown1.addEventListener("change", function() {
-            var selectedValue = dropdown1.value;
-
-            if (selectedValue === "1") {
-                typeChart1.style.display = "block";
-                typeChart2.style.display = "none";
-                typeChart3.style.display = "none";
-            } else if (selectedValue === "2") {
-                typeChart1.style.display = "none";
-                typeChart2.style.display = "block";
-                typeChart3.style.display = "none";
-            } else if (selectedValue === "3") {
-                typeChart1.style.display = "none";
-                typeChart2.style.display = "none";
-                typeChart3.style.display = "block";
+        function number_format(number, decimals, dec_point, thousands_sep) {
+            // *     example: number_format(1234.56, 2, ',', ' ');
+            // *     return: '1 234,56'
+            number = (number + '').replace(',', '').replace(' ', '');
+            var n = !isFinite(+number) ? 0 : +number,
+                prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
+                sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
+                dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
+                s = '',
+                toFixedFix = function(n, prec) {
+                    var k = Math.pow(10, prec);
+                    return '' + Math.round(n * k) / k;
+                };
+            // Fix for IE parseFloat(0.55).toFixed(0) = 0;
+            s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+            if (s[0].length > 3) {
+                s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
             }
-        });
+            if ((s[1] || '').length < prec) {
+                s[1] = s[1] || '';
+                s[1] += new Array(prec - s[1].length + 1).join('0');
+            }
+            return s.join(dec);
+        }
 
-        var dropdown2 = document.querySelector(".select-status");
-        var statusChart1 = document.getElementById("statusChart1");
-        var statusChart2 = document.getElementById("statusChart2");
-        var statusChart3 = document.getElementById("statusChart3");
-
-        statusChart1.style.display = "block";
-        statusChart2.style.display = "none";
-        statusChart3.style.display = "none";
-
-        dropdown2.addEventListener("change", function() {
-            var selectedValue = dropdown2.value;
-
-            if (selectedValue === "1") {
-                statusChart1.style.display = "block";
-                statusChart2.style.display = "none";
-                statusChart3.style.display = "none";
-            } else if (selectedValue === "2") {
-                statusChart1.style.display = "none";
-                statusChart2.style.display = "block";
-                statusChart3.style.display = "none";
-            } else if (selectedValue === "3") {
-                statusChart1.style.display = "none";
-                statusChart2.style.display = "none";
-                statusChart3.style.display = "block";
+        var chartData = @json($chartData);
+        var ctx = document.getElementById("typeChart");
+        var typeChart = new Chart(ctx, {
+            type: 'line',
+            data: chartData,
+            options: {
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 25,
+                        top: 25,
+                        bottom: 0
+                    }
+                },
+                scales: {
+                    xAxes: [{
+                        time: {
+                            unit: 'date'
+                        },
+                        gridLines: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            maxTicksLimit: 7
+                        }
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            maxTicksLimit: 5,
+                            padding: 10,
+                            callback: function(value, index, values) {
+                                return number_format(value);
+                            }
+                        },
+                        gridLines: {
+                            color: "rgb(234, 236, 244)",
+                            zeroLineColor: "rgb(234, 236, 244)",
+                            drawBorder: false,
+                            borderDash: [2],
+                            zeroLineBorderDash: [2]
+                        }
+                    }],
+                },
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyFontColor: "#858796",
+                    titleMarginBottom: 10,
+                    titleFontColor: '#6e707e',
+                    titleFontSize: 14,
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    intersect: false,
+                    mode: 'index',
+                    caretPadding: 10,
+                    callbacks: {
+                        label: function(tooltipItem, chart) {
+                            var datasetLabel = chart.datasets[tooltipItem.datasetIndex].label || '';
+                            return datasetLabel + ': ' + number_format(tooltipItem.yLabel);
+                        }
+                    }
+                }
             }
         });
     </script>
