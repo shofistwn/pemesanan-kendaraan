@@ -5,6 +5,27 @@
 @section('content')
 
     <div class="container">
+
+        @if (Session::has('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ Session::get('success') }}
+                @php
+                    Session::forget('success');
+                @endphp
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @if (Session::has('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ Session::get('error') }}
+                @php
+                    Session::forget('error');
+                @endphp
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
         <div class="d-flex justify-content-between align-items-center">
             <h1>Bookings</h1>
             <div>
@@ -15,31 +36,22 @@
 
         <div class="card mt-3">
             <div class="card-body">
-                <form>
+                <form method="GET" action="{{ route('admin.bookings.search') }}">
                     <div class="row">
-                        <div class="form-group col-md-6 mb-3">
+                        <div class="form-group col-md-4 mb-3">
                             <label for="startDate">Start date:</label>
-                            <input type="date" class="form-control" id="startDate">
+                            <input type="date" class="form-control" id="startDate" name="start_date">
                         </div>
-                        <div class="form-group col-md-6 mb-3">
+                        <div class="form-group col-md-4 mb-3">
                             <label for="endDate">End date:</label>
-                            <input type="date" class="form-control" id="endDate">
+                            <input type="date" class="form-control" id="endDate" name="end_date">
                         </div>
-                        <div class="form-group col-md-6 mb-3">
-                            <label for="status">Status:</label>
-                            <select class="form-control" id="status">
-                                <option value="">Select</option>
-                                <option value="pending">Pending</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                            </select>
-                        </div>
-                        <div class="form-group col-md-6 mb-3">
+                        <div class="form-group col-md-4 mb-3">
                             <label for="type">Type:</label>
-                            <select class="form-control" id="type">
-                                <option value="">Select</option>
-                                <option value="passenger">Passenger Vehicles</option>
-                                <option value="cargo">Cargo Vehicles</option>
+                            <select class="form-control" id="type" name="type">
+                                <option value="">Select:</option>
+                                <option value="passenger">Passenger Vehicle</option>
+                                <option value="cargo">Cargo Vehicle</option>
                             </select>
                         </div>
                     </div>
@@ -69,26 +81,46 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>Jonathan</td>
-                                <td>Angkutan Orang</td>
-                                <td>AG 8689 YG</td>
-                                <td>Level 1</td>
-                                <td>Level 2</td>
-                                <th>
-                                    <span class="badge bg-primary">Pending Approver 2</span>
-                                </th>
-                                <td>20 Jun, 2022</td>
-                                <td>
-                                    <a href="{{ route('admin.bookings.show') }}"
-                                        class="badge bg-primary text-decoration-none text-white">Detail</a>
-                                    <a href="{{ route('admin.bookings.edit') }}"
-                                        class="badge bg-success text-decoration-none text-white">Edit</a>
-                                    <a href="" class="badge bg-danger text-decoration-none text-white"
-                                        onclick="return confirm('Are you sure you want to delete the data?')">Delete</a>
-                                </td>
-                            </tr>
+                            @forelse ($bookings as $index => $booking)
+                                <tr>
+                                    <td>{{ ++$index }}</td>
+                                    <td>{{ $booking->user->name }}</td>
+                                    <td>{{ $booking->vehicle->vehicle_type }}</td>
+                                    <td>{{ $booking->vehicle->vehicle_number }}</td>
+                                    <td>{{ $booking->approval->get(0)->user->name ?? '-' }}</td>
+                                    <td>{{ $booking->approval->get(1)->user->name ?? '-' }}</td>
+                                    <th>
+                                        @if ($booking->approval->isEmpty())
+                                            -
+                                        @elseif (
+                                            $booking->approval->get(0)->approval_status == 'rejected' ||
+                                                $booking->approval->get(1)->approval_status == 'rejected')
+                                            <span class="badge bg-danger">Rejected</span>
+                                        @elseif ($booking->approval->get(0)->approval_status == 'pending')
+                                            <span class="badge bg-warning text-dark">Pending Approver 1</span>
+                                        @elseif ($booking->approval->get(1)->approval_status == 'approved')
+                                            <span class="badge bg-success">Approved</span>
+                                        @elseif ($booking->approval->get(0)->approval_status == 'approved')
+                                            <span class="badge bg-warning text-dark">Pending Approver 2</span>
+                                        @endif
+                                    </th>
+                                    <td>{{ $booking->booking_date }}</td>
+                                    <td>
+                                        <a href="{{ route('admin.bookings.show', $booking->id) }}"
+                                            class="badge bg-primary text-decoration-none text-white">Detail</a>
+                                        <a href="{{ route('admin.bookings.edit', $booking->id) }}"
+                                            class="badge bg-success text-decoration-none text-white">Edit</a>
+                                        <a href="{{ route('admin.bookings.delete', $booking->id) }}"
+                                            class="badge bg-danger text-decoration-none text-white"
+                                            onclick="return confirm('Are you sure you want to delete the data?')">Delete</a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="text-center">Data not found!</td>
+                                </tr>
+                            @endforelse
+
                         </tbody>
                     </table>
                 </div>
