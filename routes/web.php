@@ -36,6 +36,7 @@ Route::middleware('role:admin')->prefix('admin')->name('admin')->group(function 
   Route::prefix('bookings')->name('.bookings')->controller(BookingController::class)->group(function () {
     Route::get('/', 'index')->name('.index');
     Route::get('/search', 'search')->name('.search');
+    Route::get('/export', 'export')->name('.export');
     Route::post('/', 'store')->name('.store');
     Route::get('/create', 'create')->name('.create');
     Route::get('/{booking_id}', 'show')->name('.show');

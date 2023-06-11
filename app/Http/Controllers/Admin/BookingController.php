@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\BookingsExport;
 use App\Http\Controllers\Controller;
 use App\Models\Approval;
 use App\Models\Booking;
@@ -10,6 +11,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use DB;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 use Validator;
 
 class BookingController extends Controller
@@ -234,5 +236,57 @@ class BookingController extends Controller
       DB::rollback();
       return back()->with('error', $e->getMessage());
     }
+  }
+
+  public function export(Request $request)
+  {
+    $startDate = $request->input('start_date');
+    $endDate = $request->input('end_date');
+    $type = $request->input('type');
+
+    $query = Booking::with('user:id,name', 'vehicle', 'driver', 'approval.user:id,name,role');
+
+    if ($startDate && $endDate) {
+      $query->whereBetween('booking_date', [$startDate, $endDate]);
+    }
+
+    if ($type) {
+      $query->whereHas('vehicle', function ($q) use ($type) {
+        $q->where('vehicle_type', $type);
+      });
+    }
+
+    $bookings = $query->get();
+
+    $exportData = $bookings->map(function ($booking, $index) {
+      $firstApprover = $booking->approval->get(0)->user->name ?? '-';
+      $secondApprover = $booking->approval->get(1)->user->name ?? '-';
+
+      $status = '-';
+      if (!$booking->approval->isEmpty()) {
+        if ($booking->approval->get(0)->approval_status == 'rejected' || $booking->approval->get(1)->approval_status == 'rejected') {
+          $status = 'Rejected';
+        } elseif ($booking->approval->get(0)->approval_status == 'pending') {
+          $status = 'Pending Approver 1';
+        } elseif ($booking->approval->get(1)->approval_status == 'approved') {
+          $status = 'Approved';
+        } elseif ($booking->approval->get(0)->approval_status == 'approved') {
+          $status = 'Pending Approver 2';
+        }
+      }
+
+      return [
+        '#' => ++$index,
+        'Driver' => $booking->driver->driver_name,
+        'Vehicle Type' => $booking->vehicle->vehicle_type,
+        'Vehicle Number' => $booking->vehicle->vehicle_number,
+        'First Approver' => $firstApprover,
+        'Second Approver' => $secondApprover,
+        'Status' => $status,
+        'Date' => $booking->booking_date,
+      ];
+    });
+
+    return Excel::download(new BookingsExport($exportData), 'Bookings - Pemesanan Kendaraan.xlsx');
   }
 }
