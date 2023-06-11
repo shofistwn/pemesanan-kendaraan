@@ -30,7 +30,8 @@
             <h1>Bookings</h1>
             <div>
                 <a href="{{ route('admin.bookings.create') }}" class="btn btn-primary me-2">Add Booking</a>
-                <a href="{{ route('admin.bookings.create') }}" class="btn btn-success">Export Excel</a>
+                <a href="{{ route('admin.bookings.export', ['start_date' => request('start_date'), 'end_date' => request('end_date'), 'type' => request('type')]) }}"
+                    class="btn btn-success">Export Excel</a>
             </div>
         </div>
 
