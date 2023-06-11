@@ -35,8 +35,12 @@ Route::middleware('role:admin')->prefix('admin')->name('admin')->group(function 
 
   Route::prefix('bookings')->name('.bookings')->controller(BookingController::class)->group(function () {
     Route::get('/', 'index')->name('.index');
+    Route::get('/search', 'search')->name('.search');
+    Route::post('/', 'store')->name('.store');
     Route::get('/create', 'create')->name('.create');
-    Route::get('/show', 'show')->name('.show');
-    Route::get('/edit', 'edit')->name('.edit');
+    Route::get('/{booking_id}', 'show')->name('.show');
+    Route::get('/{booking_id}/edit', 'edit')->name('.edit');
+    Route::post('/{booking_id}/update', 'update')->name('.update');
+    Route::get('/{booking_id}/delete', 'delete')->name('.delete');
   });
 });

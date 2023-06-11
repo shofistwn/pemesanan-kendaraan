@@ -9,13 +9,14 @@
                 <h1>Login</h1>
                 <div class="card mt-4">
                     <div class="card-body">
-                      
+
                         @if (Session::has('error'))
-                            <div class="alert alert-danger">
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
                                 {{ Session::get('error') }}
                                 @php
                                     Session::forget('error');
                                 @endphp
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
                         @endif
 
